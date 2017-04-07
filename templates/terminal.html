@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+    <head>
+        <title>xterm.js demo</title>
+        <link rel="stylesheet" href="/static/xterm.css" />
+        <link rel="stylesheet" href="/static/addons/fullscreen/fullscreen.css" />
+        <!--<script src="/static/jquery-3.2.0.min.js"></script>-->
+        <script src="/static/xterm.js" ></script>
+        <script src="/static/addons/attach/attach.js" ></script>
+        <script src="/static/addons/fit/fit.js" ></script>
+        <script src="/static/addons/fullscreen/fullscreen.js" ></script>
+    </head>
+    <body>
+        <h3>xterm.js: xterm, in the browser</h3>
+        <div id="terminal-container"></div>
+        <script>
+            var namespaces = {[{.Namespace}]};
+            var podName = {[{.PodName}]};
+            var containerName = {[{.ContainerName}]};
+
+            var ww = Math.ceil(window.innerWidth/5);
+            var wh = Math.ceil(window.innerHeight/5);
+            if (ww < 300  ){
+                ww = 300;
+            }
+
+            if (wh < 40 ){
+                wh = 40;
+            }
+
+            var term = new Terminal({cols: ww, rows: wh});
+            //var term = new Terminal();
+            term.open(document.getElementById('terminal-container'));
+            //term.fit();
+            term.toggleFullscreen(true); 
+
+            protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+            //socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminal/'+namespaces+"/"+podName+"/"+containerName+"?cols="+cols+"&rows="+rows;
+            socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminal/'+namespaces+"/"+podName+"/"+containerName;
+
+            socket = new WebSocket(socketURL);
+            socket.onopen = runRealTerminal;
+            socket.onclose = runFakeTerminal1;
+            socket.onerror = runFakeTerminal1;
+            socket.onmessage = function (e) {
+                console.log(e.data);
+            }
+
+
+            function runRealTerminal() {
+                term.attach(socket);
+                term._initialized = true;
+            }
+
+            function runFakeTerminal1(){
+                console.log("runFakeTerminal1");
+            }
+
+        </script>
+    </body>
+</html>

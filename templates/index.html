@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>xterm.js demo</title>
+    <meta charset="UTF-8">
+    <!--<link rel="stylesheet" href="/static/xterm.css" />
+    <script src="/static/xterm.js"></script>
+    <script src="/static/addons/attach/attach.js"></script>-->
+    <script src="/static/jquery-3.2.0.min.js"></script>
+</head>
+
+<body>
+    <script>
+        $(function () {
+            console.log("ready!");
+            $.ajax({
+                type: 'GET',
+                url: "/api/v1/namespaces",
+                data: {},
+                success: function (data) {
+                    var options = $("#namespaces");
+                    $.each(data.data, function (index, item) {
+                        if (index === 0) {
+                            first = $("<option />");
+                            first.val(item).text(item);
+                            first.prop('selected', true);
+                            options.append(first);
+                        } else {
+                            options.append($("<option />").val(item).text(item));
+                        }
+                    });
+
+                    getPod();
+                },
+                error: function (err) {
+                    console.log("error", err);
+                }
+            });
+
+            var getPod = function () {
+                ns = $("#namespaces").val();
+                console.log("===>> getPod", ns);
+                $.ajax({
+                    type: "GET",
+                    url: "/api/v1/namespaces/" + ns,
+                    data: {},
+                    success: function (data) {
+                        var options = $("#pods");
+                        options.empty();
+                        $.each(data.data, function (index, item) {
+                            if (index === 0) {
+                                first = $("<option />");
+                                first.val(item).text(item);
+                                first.prop('selected', true);
+                                options.append(first);
+                            } else {
+                                options.append($("<option />").val(item).text(item));
+                            }
+                        });
+                        getContainers();
+                    },
+                    error: function (err) { console.log(err); }
+                })
+            };
+
+            var getContainers = function () {
+                pn = $("#pods").val();
+                ns = $("#namespaces").val();
+                console.log("===>> getContainers", ns, pn);
+                $.ajax({
+                    type: "GET",
+                    url: "/api/v1/namespaces/" + ns + "/" + pn,
+                    data: {},
+                    success: function (data) {
+                        var options = $("#containers");
+                        options.empty();
+                        $.each(data.data, function (index, item) {
+                            options.append($("<option />").val(item).text(item));
+                        });
+                    },
+                    error: function (err) { console.log(err); }
+                })
+            }
+
+            $("#namespaces").on("change", function (ev) {
+                getPod();
+            });
+
+            $("#pods").on("change", function (ev) {
+                getContainers();
+            });
+
+            $("#btn_term_bash").on("click", function () {
+                $.ajax({
+                    url: "/ui/terminal",
+                    type: "POST",
+                    data: { namespace: $("#namespaces").val(), podName: $("#pods").val(), containerName: $("#containers").val() },
+                    success: function (data) {
+                        var win = window.open('about:blank');
+                        with (win.document) {
+                            open();
+                            write(data);
+                            close();
+                        }
+                    },
+                    error: function (err) { }
+                });
+            });
+        });
+    </script>
+    <select id="namespaces"></select>
+    <select id="pods"></select>
+    <select id="containers"></select>
+    <button id="btn_term_bash">打开Bash Termianl</button>
+    <button id="btn_term_sh">打开sh Termianl</button>
+</body>
+
+</html>

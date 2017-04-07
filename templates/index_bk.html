@@ -1,0 +1,74 @@
+{{ define "index" }}
+<!doctype html>
+<html>
+    <head>
+        <title>xterm.js demo</title>
+        <link rel="stylesheet" href="/static/xterm.css" />
+        <!--<link rel="stylesheet" href="/static/addons/fullscreen/fullscreen.css" />
+      	<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js"></script>-->
+        <script src="/static/xterm.js" ></script>
+        <script src="/static/addons/attach/attach.js" ></script>
+        <!--<script src="/static/addons/fit/fit.js" ></script>-->
+        <!--<script src="/static/addons/fullscreen/fullscreen.js" ></script>-->
+    </head>
+    <body>
+        <h3>xterm.js: xterm, in the browser</h3>
+        <div id="terminal-container"></div>
+        <script>
+            var term = new Terminal();
+            var shellprompt = '$ ';
+
+            term.prompt = function () {
+                term.write('\r\n' + shellprompt);
+            };
+
+            term.open(document.getElementById('terminal-container'));
+            term.prompt();
+
+            protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+            socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/1';
+
+            socket = new WebSocket(socketURL);
+            socket.onopen = runRealTerminal;
+            socket.onclose = runFakeTerminal1;
+            socket.onerror = runFakeTerminal1;
+            socket.onmessage = function (e) {
+                console.log(e.data);
+            }
+
+            term.on('key', function (key, ev) {
+                console.log("==>> key ", key, " ==== ev", ev.altKey, ev.altGraphKey,ev.metaKey );
+                var printable = (
+                    !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
+                );
+
+                if (ev.keyCode == 13) {
+                    term.prompt();
+                } else if (ev.keyCode == 8) {
+                    if (term.x > 2) {
+                        term.write('\b \b');
+                    }
+                } else if (printable) {
+                    term.write(key);
+                }
+            });
+
+            term.on('paste', function (data, ev) {
+                console.log("paste  data ", data, " ev ", ev)
+                term.write(data);
+            });
+
+
+            function runRealTerminal() {
+                term.attach(socket);
+                term._initialized = true;
+            }
+
+            function runFakeTerminal1(){
+                console.log("runFakeTerminal1");
+            }
+
+        </script>
+    </body>
+</html>
+{{ end }}
